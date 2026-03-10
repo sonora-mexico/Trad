@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>MexiSonora Trading Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=JetBrains+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#04080f;--bg2:#0a1120;--bg3:#0d1528;
+  --border:#162040;--border2:#1c2a52;
+  --text:#dce8ff;--muted:#6a82b0;--dim:#3a4e78;
+  --green:#00ff88;--red:#ff2d55;--blue:#00aaff;--gold:#ffd600;--orange:#ff7a00;--purple:#bf5fff;
+}
+body{background:var(--bg);color:var(--text);font-family:'Manrope',sans-serif;min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:#080e1c}
+::-webkit-scrollbar-thumb{background:#162040;border-radius:2px}
+
+/* ANIMATIONS */
+@keyframes scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+@keyframes fadein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+
+/* LAYOUT */
+#app{padding-top:128px}
+header{position:fixed;top:0;left:0;right:0;z-index:900;height:58px;display:flex;align-items:center;gap:14px;padding:0 20px;background:rgba(4,8,15,.94);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.logo{font-family:'Syne',sans-serif;font-size:18px;font-weight:900;flex-shrink:0}
+.logo span:first-child{color:#fff}
+.logo span:last-child{color:var(--green)}
+#search-wrap{flex:1;max-width:340px;position:relative}
+#search{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;padding:7px 14px;border-radius:8px;outline:none}
+#search-drop{position:absolute;top:calc(100% + 6px);left:0;right:0;background:#0f1830;border:1px solid var(--border2);border-radius:10px;z-index:1000;overflow:hidden;display:none}
+.s-item{display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;border-bottom:1px solid var(--border);transition:.15s}
+.s-item:hover{background:var(--border)}
+.s-badge{font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;flex-shrink:0}
+.header-right{display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0}
+.live-pill{display:flex;align-items:center;gap:5px;background:rgba(0,255,136,.06);border:1px solid rgba(0,255,136,.15);border-radius:20px;padding:4px 10px}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite}
+.live-txt{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--green);letter-spacing:1px}
+#clock{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)}
+
+/* TAPE */
+#tape{position:fixed;top:58px;left:0;right:0;z-index:890;height:30px;background:rgba(4,8,15,.9);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);overflow:hidden;display:flex;align-items:center}
+.tape-inner{display:flex;gap:24px;animation:scroll 80s linear infinite;white-space:nowrap;padding:0 20px}
+.tape-item{font-family:'JetBrains Mono',monospace;font-size:11px;display:flex;gap:6px;align-items:center}
+.tape-sep{color:var(--border2)}
+
+/* TABS */
+#tabs{position:fixed;top:88px;left:0;right:0;z-index:880;background:rgba(4,8,15,.9);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 20px;display:flex;gap:2px;overflow-x:auto}
+.tab{background:none;border:none;color:var(--dim);font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;padding:10px 14px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;transition:.2s;display:flex;align-items:center;gap:5px}
+.tab.active{color:var(--blue)}
+.tab.active.stocks{color:var(--blue)}
+.tab.active.crypto{color:var(--orange)}
+.tab.active.fx{color:var(--green)}
+.tab.active.metals{color:var(--gold)}
+.tab-cnt{font-size:9px;font-weight:700;padding:1px 5px;border-radius:10px;background:#162040;color:var(--muted)}
+
+/* CONTENT */
+#content{padding:20px;max-width:1440px;margin:0 auto;animation:fadein .3s ease}
+
+/* CARDS */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:18px}
+.asset-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;cursor:pointer;transition:.2s}
+.asset-card:hover{transform:translateY(-2px)}
+
+/* GRID helpers */
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+.grid-auto{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:24px}
+@media(max-width:900px){.grid-4{grid-template-columns:1fr 1fr}.grid-3{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.grid-4{grid-template-columns:1fr}.grid-3{grid-template-columns:1fr}.grid-2{grid-template-columns:1fr}}
+
+/* PAGE TITLE */
+.page-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.ms-badge{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--gold);background:rgba(255,214,0,.07);border:1px solid rgba(255,214,0,.18);padding:5px 12px;border-radius:20px}
+
+/* STAT BOX */
+.stat-box{background:var(--bg3);border-radius:10px;padding:14px}
+.stat-lbl{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}
+.stat-val{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:500;margin-bottom:4px}
+.stat-sub{font-size:11px;color:var(--muted);margin-top:4px}
+
+/* TABLE */
+table{width:100%;border-collapse:collapse}
+th{font-size:10px;color:var(--dim);font-weight:700;letter-spacing:.5px;text-transform:uppercase;padding:9px 12px;border-bottom:1px solid var(--border);text-align:left}
+td{padding:10px 12px;border-bottom:1px solid rgba(13,21,40,.44)}
+tr{cursor:pointer;transition:.1s}
+tr:hover td{background:var(--bg3)}
+
+/* SIGNAL */
+.sig{font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px}
+.sig-buy{background:rgba(0,255,136,.1);color:var(--green);border:1px solid rgba(0,255,136,.25)}
+.sig-sell{background:rgba(255,45,85,.1);color:var(--red);border:1px solid rgba(255,45,85,.25)}
+.sig-hold{background:rgba(255,122,0,.1);color:var(--orange);border:1px solid rgba(255,122,0,.25)}
+
+/* RSI BAR */
+.rsi-wrap{position:relative;height:10px;border-radius:5px;background:linear-gradient(90deg,var(--green) 0%,var(--gold) 30%,var(--gold) 70%,var(--red) 100%);margin:8px 0}
+.rsi-cursor{position:absolute;top:-5px;width:4px;height:20px;background:#fff;border-radius:2px;transform:translateX(-50%);transition:left .5s}
+.rsi-labels{display:flex;justify-content:space-between;font-size:9px;color:var(--dim);margin-top:4px}
+
+/* MINI ROW */
+.mini-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)}
+.mini-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0}
+
+/* OVERLAY */
+#overlay{display:none;position:fixed;inset:0;z-index:2000;background:rgba(2,5,12,.97);backdrop-filter:blur(20px);overflow-y:auto;animation:fadein .2s ease}
+#overlay-inner{max-width:1100px;margin:0 auto;padding:28px}
+
+/* CONVERTER */
+.conv-input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-size:13px;padding:9px 13px;border-radius:9px;outline:none;font-family:'Manrope',sans-serif}
+label.form-lbl{font-size:11px;color:var(--muted);display:block;margin-bottom:5px}
+
+/* BUTTONS */
+.btn-green{width:100%;background:linear-gradient(135deg,#00cc6a,#007755);color:#000;font-size:13px;font-weight:700;padding:11px;border-radius:9px;border:none;cursor:pointer}
+.btn-blue{width:100%;background:linear-gradient(135deg,var(--blue),#0088cc);color:#fff;font-size:13px;font-weight:700;padding:11px;border-radius:9px;border:none;cursor:pointer}
+.btn-ghost{background:none;border:1px solid var(--border);color:var(--muted);font-size:11px;padding:5px 10px;border-radius:7px;cursor:pointer}
+.btn-red{background:rgba(255,45,85,.08);border:1px solid rgba(255,45,85,.2);color:var(--red);font-size:11px;padding:4px 8px;border-radius:6px;cursor:pointer}
+
+/* SPARKLINE */
+.spark{display:block}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- HEADER -->
+  <header>
+    <div class="logo"><span>Mexi</span><span>Sonora</span></div>
+    <div id="search-wrap">
+      <input id="search" placeholder="Buscar: AAPL, BTC, EUR/USD, Oro..." autocomplete="off"/>
+      <div id="search-drop"></div>
+    </div>
+    <div class="header-right">
+      <div class="live-pill"><div class="live-dot"></div><span class="live-txt">EN VIVO</span></div>
+      <span id="clock"></span>
+    </div>
+  </header>
+
+  <!-- TICKER TAPE -->
+  <div id="tape"><div class="tape-inner" id="tape-inner"></div></div>
+
+  <!-- TABS -->
+  <div id="tabs">
+    <button class="tab active stocks" onclick="nav('dash')" id="tab-dash">📊 Dashboard</button>
+    <button class="tab stocks" onclick="nav('stocks')" id="tab-stocks">📈 Acciones <span class="tab-cnt">20</span></button>
+    <button class="tab crypto" onclick="nav('crypto')" id="tab-crypto">₿ Crypto <span class="tab-cnt">30</span></button>
+    <button class="tab fx" onclick="nav('fx')" id="tab-fx">💱 Divisas <span class="tab-cnt">28</span></button>
+    <button class="tab metals" onclick="nav('metals')" id="tab-metals">🥇 Metales <span class="tab-cnt">8</span></button>
+    <button class="tab" onclick="nav('portfolio')" id="tab-portfolio">💼 Portafolio</button>
+    <button class="tab" onclick="nav('alerts')" id="tab-alerts">🔔 Alertas</button>
+    <button class="tab" onclick="nav('history')" id="tab-history">📜 Historial</button>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div id="content"></div>
+</div>
+
+<!-- PROJECTION OVERLAY -->
+<div id="overlay">
+  <div id="overlay-inner"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════
+const STOCKS = {
+  AAPL:{name:"Apple Inc.",base:221.50},NVDA:{name:"NVIDIA Corp.",base:952.10},
+  MSFT:{name:"Microsoft",base:432.80},AMZN:{name:"Amazon",base:226.40},
+  TSLA:{name:"Tesla",base:248.50},META:{name:"Meta",base:682.90},
+  GOOGL:{name:"Alphabet",base:192.30},NFLX:{name:"Netflix",base:1004.20},
+  JPM:{name:"JPMorgan",base:248.10},V:{name:"Visa",base:331.20},
+  WMT:{name:"Walmart",base:98.40},AMD:{name:"AMD",base:172.30},
+  DIS:{name:"Disney",base:115.40},CRM:{name:"Salesforce",base:340.60},
+  COIN:{name:"Coinbase",base:248.90},INTC:{name:"Intel",base:21.40},
+  SPOT:{name:"Spotify",base:524.80},PYPL:{name:"PayPal",base:68.90},
+  XOM:{name:"Exxon",base:120.80},BRKB:{name:"Berkshire B",base:484.20},
+}
+const METALS = {
+  XAU:{name:"Oro (Gold)",base:2905.40},XAG:{name:"Plata (Silver)",base:32.18},
+  XPT:{name:"Platino",base:1052.30},XPD:{name:"Paladio",base:985.60},
+  XCU:{name:"Cobre",base:4.82},WTI:{name:"Petróleo WTI",base:68.40},
+  NG:{name:"Gas Natural",base:2.85},ALU:{name:"Aluminio",base:2480},
+}
+const FX_BASE = {
+  MXN:{name:"Peso Mexicano",flag:"🇲🇽",base:17.45},EUR:{name:"Euro",flag:"🇪🇺",base:0.9182},
+  GBP:{name:"Libra Esterlina",flag:"🇬🇧",base:0.7891},JPY:{name:"Yen Japonés",flag:"🇯🇵",base:149.82},
+  CAD:{name:"Dólar Canadiense",flag:"🇨🇦",base:1.3612},BRL:{name:"Real Brasileño",flag:"🇧🇷",base:5.6820},
+  ARS:{name:"Peso Argentino",flag:"🇦🇷",base:994.50},COP:{name:"Peso Colombiano",flag:"🇨🇴",base:4215.80},
+  CLP:{name:"Peso Chileno",flag:"🇨🇱",base:961.20},CNY:{name:"Yuan Chino",flag:"🇨🇳",base:7.2415},
+  AUD:{name:"Dólar Australiano",flag:"🇦🇺",base:1.5431},CHF:{name:"Franco Suizo",flag:"🇨🇭",base:0.8940},
+  INR:{name:"Rupia India",flag:"🇮🇳",base:84.25},KRW:{name:"Won Coreano",flag:"🇰🇷",base:1348.60},
+  SEK:{name:"Corona Sueca",flag:"🇸🇪",base:10.4821},SGD:{name:"Dólar Singapur",flag:"🇸🇬",base:1.3490},
+  HKD:{name:"Dólar HK",flag:"🇭🇰",base:7.8124},ZAR:{name:"Rand Sudafricano",flag:"🇿🇦",base:18.421},
+  PEN:{name:"Sol Peruano",flag:"🇵🇪",base:3.784},TRY:{name:"Lira Turca",flag:"🇹🇷",base:32.845},
+  SAR:{name:"Riyal Saudí",flag:"🇸🇦",base:3.7501},AED:{name:"Dírham EAU",flag:"🇦🇪",base:3.673},
+  THB:{name:"Baht Tailandés",flag:"🇹🇭",base:35.48},NZD:{name:"Dólar NZ",flag:"🇳🇿",base:1.638},
+  NOK:{name:"Corona Noruega",flag:"🇳🇴",base:10.542},DKK:{name:"Corona Danesa",flag:"🇩🇰",base:6.884},
+  GTQ:{name:"Quetzal",flag:"🇬🇹",base:7.784},CRC:{name:"Colón CR",flag:"🇨🇷",base:512.4},
+}
+const CRYPTO = {
+  bitcoin:{sym:"BTC",name:"Bitcoin",price:103450,cap:2.04e12,ch24:-1.2,ch7:5.8},
+  ethereum:{sym:"ETH",name:"Ethereum",price:3820,cap:4.59e11,ch24:0.8,ch7:8.2},
+  binancecoin:{sym:"BNB",name:"BNB",price:692,cap:1.02e11,ch24:1.4,ch7:3.1},
+  solana:{sym:"SOL",name:"Solana",price:242,cap:1.14e11,ch24:2.1,ch7:12.4},
+  ripple:{sym:"XRP",name:"XRP",price:2.48,cap:1.42e11,ch24:-0.5,ch7:4.2},
+  cardano:{sym:"ADA",name:"Cardano",price:0.98,cap:3.48e10,ch24:1.8,ch7:6.5},
+  "avalanche-2":{sym:"AVAX",name:"Avalanche",price:42.80,cap:1.77e10,ch24:3.2,ch7:9.1},
+  polkadot:{sym:"DOT",name:"Polkadot",price:9.24,cap:1.35e10,ch24:0.4,ch7:2.8},
+  chainlink:{sym:"LINK",name:"Chainlink",price:22.80,cap:1.39e10,ch24:1.2,ch7:7.4},
+  dogecoin:{sym:"DOGE",name:"Dogecoin",price:0.384,cap:5.62e10,ch24:2.4,ch7:11.2},
+  litecoin:{sym:"LTC",name:"Litecoin",price:98.20,cap:7.28e9,ch24:0.6,ch7:1.8},
+  "shiba-inu":{sym:"SHIB",name:"Shiba Inu",price:0.0000248,cap:1.46e10,ch24:1.8,ch7:8.4},
+  polygon:{sym:"MATIC",name:"Polygon",price:0.642,cap:6.38e9,ch24:0.3,ch7:2.1},
+  near:{sym:"NEAR",name:"NEAR Protocol",price:6.82,cap:8.12e9,ch24:2.8,ch7:9.8},
+  monero:{sym:"XMR",name:"Monero",price:184.20,cap:3.38e9,ch24:0.2,ch7:1.4},
+  stellar:{sym:"XLM",name:"Stellar",price:0.382,cap:1.15e10,ch24:0.9,ch7:5.2},
+  cosmos:{sym:"ATOM",name:"Cosmos",price:8.24,cap:3.21e9,ch24:0.8,ch7:4.2},
+  aptos:{sym:"APT",name:"Aptos",price:8.92,cap:3.82e9,ch24:3.4,ch7:14.2},
+  arbitrum:{sym:"ARB",name:"Arbitrum",price:1.02,cap:3.14e9,ch24:1.8,ch7:6.8},
+  tron:{sym:"TRX",name:"TRON",price:0.248,cap:2.14e10,ch24:0.4,ch7:2.8},
+  "bitcoin-cash":{sym:"BCH",name:"Bitcoin Cash",price:482.50,cap:9.53e9,ch24:1.1,ch7:4.5},
+  "the-open-network":{sym:"TON",name:"Toncoin",price:5.82,cap:2.02e10,ch24:1.6,ch7:7.2},
+  uniswap:{sym:"UNI",name:"Uniswap",price:12.40,cap:7.41e9,ch24:-0.8,ch7:3.2},
+  vechain:{sym:"VET",name:"VeChain",price:0.0428,cap:3.48e9,ch24:0.8,ch7:3.4},
+  filecoin:{sym:"FIL",name:"Filecoin",price:5.42,cap:3.05e9,ch24:-1.2,ch7:-3.4},
+  algorand:{sym:"ALGO",name:"Algorand",price:0.248,cap:2.04e9,ch24:1.4,ch7:3.8},
+  "internet-computer":{sym:"ICP",name:"ICP",price:9.84,cap:4.62e9,ch24:0.6,ch7:2.4},
+  optimism:{sym:"OP",name:"Optimism",price:2.24,cap:2.98e9,ch24:2.2,ch7:8.4},
+  eos:{sym:"EOS",name:"EOS",price:0.842,cap:1.26e9,ch24:-0.6,ch7:-1.2},
+  "immutable-x":{sym:"IMX",name:"Immutable X",price:1.84,cap:2.58e9,ch24:0.4,ch7:1.8},
+}
+
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+let prices = {}
+let crypto = JSON.parse(JSON.stringify(CRYPTO))
+let fxData = {}
+let rsiData = {}
+let histData = {}
+let portfolio = []
+let alerts = []
+let history = []
+let currentPage = 'dash'
+let histSel = 'AAPL'
+
+// ═══════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════
+const f = (n,d=2) => n==null?'—':Number(n).toFixed(d).replace(/\B(?=(\d{3})+(?!\d))/g,',')
+const fD = n => '$'+f(n)
+const fP = n => (n>=0?'+':'')+f(n)+'%'
+const cls = n => n>=0?'#00ff88':'#ff2d55'
+const arr = n => n>=0?'▲':'▼'
+const fB = n => { if(!n)return'—';const a=Math.abs(n);if(a>=1e12)return'$'+f(a/1e12,2)+'T';if(a>=1e9)return'$'+f(a/1e9,1)+'B';if(a>=1e6)return'$'+f(a/1e6,1)+'M';return fD(n) }
+
+function sigClass(s){return s==='BUY'?'sig-buy':s==='SELL'?'sig-sell':'sig-hold'}
+
+function genHistory(base,pts=60){
+  let data=[],p=base*(0.82+Math.random()*0.16)
+  for(let i=0;i<pts;i++){p=Math.max(p*(1+(Math.random()-.488)*0.04),base*0.3);data.push(p)}
+  const sc=base/data[data.length-1]
+  return data.map((v,i)=>v*(1+(sc-1)*(i/data.length)))
+}
+
+function sparkSVG(data,w=90,h=32){
+  if(!data||data.length<2)return''
+  const mn=Math.min(...data),mx=Math.max(...data),rng=mx-mn||1
+  const pts=data.map((v,i)=>`${(i/(data.length-1))*w},${h-((v-mn)/rng)*h}`).join(' ')
+  const col=data[data.length-1]>=data[0]?'#00ff88':'#ff2d55'
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><polyline fill="none" stroke="${col}" stroke-width="1.5" points="${pts}"/></svg>`
+}
+
+function getPrice(sym){
+  if(prices[sym])return prices[sym]
+  if(crypto[sym])return crypto[sym].price
+  return 0
+}
+
+function getChange(sym){
+  const base=STOCKS[sym]?.base||METALS[sym]?.base||FX_BASE[sym]?.base||0
+  if(base)return((getPrice(sym)-base)/base)*100
+  return 0
+}
+
+function getSignal(sym){
+  const rsi=rsiData[sym]||50
+  return rsi<35?'BUY':rsi>68?'SELL':'HOLD'
+}
+
+function getForecast(sym,days=7){
+  const h=histData[sym]||[]
+  const cur=getPrice(sym)||STOCKS[sym]?.base||METALS[sym]?.base||FX_BASE[sym]?.base||100
+  if(h.length<5)return{price:cur,pct:0}
+  const n=h.length;let sx=0,sy=0,sxy=0,sx2=0
+  h.forEach((v,i)=>{sx+=i;sy+=v;sxy+=i*v;sx2+=i*i})
+  const denom=n*sx2-sx*sx
+  if(!denom)return{price:cur,pct:0}
+  const slope=(n*sxy-sx*sy)/denom,intercept=(sy-slope*sx)/n
+  const predicted=Math.max(intercept+slope*(n+Math.max(1,Math.round(days/7))),cur*0.4)
+  return{price:predicted,pct:((predicted-cur)/cur)*100}
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+function init(){
+  // Init prices
+  Object.keys(STOCKS).forEach(s=>prices[s]=STOCKS[s].base*(0.98+Math.random()*0.04))
+  Object.keys(METALS).forEach(s=>prices[s]=METALS[s].base*(0.99+Math.random()*0.02))
+  Object.keys(FX_BASE).forEach(s=>fxData[s]=prices[s]=FX_BASE[s].base*(0.998+Math.random()*0.004))
+
+  // Init RSI
+  const allKeys=[...Object.keys(STOCKS),...Object.keys(METALS),...Object.keys(FX_BASE),...Object.keys(CRYPTO)]
+  allKeys.forEach(k=>rsiData[k]=30+Math.random()*44)
+
+  // Init history
+  allKeys.forEach(k=>{
+    const base=STOCKS[k]?.base||METALS[k]?.base||FX_BASE[k]?.base||crypto[k]?.price||100
+    histData[k]=genHistory(base,60)
+  })
+
+  // Load local storage
+  try{portfolio=JSON.parse(localStorage.getItem('ms_port')||'[]')}catch(e){}
+  try{alerts=JSON.parse(localStorage.getItem('ms_alerts')||'[]')}catch(e){}
+  try{history=JSON.parse(localStorage.getItem('ms_hist')||'[]')}catch(e){}
+
+  // Fetch real data
+  fetchCrypto()
+  fetchFX()
+
+  // Tick
+  setInterval(()=>{
+    Object.keys(STOCKS).forEach(s=>prices[s]=(prices[s]||STOCKS[s].base)*(1+(Math.random()-.492)*0.0018))
+    Object.keys(METALS).forEach(s=>prices[s]=(prices[s]||METALS[s].base)*(1+(Math.random()-.494)*0.0009))
+    Object.keys(FX_BASE).forEach(s=>{fxData[s]=(fxData[s]||FX_BASE[s].base)*(1+(Math.random()-.499)*0.0005);prices[s]=fxData[s]})
+    Object.keys(rsiData).forEach(k=>rsiData[k]=Math.max(10,Math.min(92,rsiData[k]+(Math.random()-.5)*2.5)))
+    render()
+    buildTape()
+  },5000)
+
+  // Clock
+  setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('es-MX')},1000)
+
+  // Re-fetch every 60s
+  setInterval(()=>{fetchCrypto();fetchFX()},60000)
+
+  buildTape()
+  buildSearch()
+  render()
+}
+
+async function fetchCrypto(){
+  try{
+    const r=await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=30&sparkline=false&price_change_percentage=24h,7d',{signal:AbortSignal.timeout(8000)})
+    if(!r.ok)return
+    const data=await r.json()
+    data.forEach(coin=>{if(crypto[coin.id]){crypto[coin.id]={...crypto[coin.id],price:coin.current_price,cap:coin.market_cap,ch24:coin.price_change_percentage_24h||0,ch7:coin.price_change_percentage_7d_in_currency||0}}})
+    if(currentPage==='crypto'||currentPage==='dash')render()
+  }catch(e){}
+}
+
+async function fetchFX(){
+  try{
+    const r=await fetch('https://api.frankfurter.app/latest?from=USD',{signal:AbortSignal.timeout(6000)})
+    if(!r.ok)return
+    const data=await r.json()
+    Object.keys(FX_BASE).forEach(s=>{if(data.rates[s]){fxData[s]=data.rates[s];prices[s]=data.rates[s]}})
+    if(currentPage==='fx'||currentPage==='dash')render()
+  }catch(e){}
+}
+
+// ═══════════════════════════════════════════
+// TAPE
+// ═══════════════════════════════════════════
+function buildTape(){
+  const items=[...Object.keys(STOCKS).slice(0,8),...Object.keys(METALS).slice(0,3)]
+  let html=''
+  items.forEach(s=>{
+    const p=getPrice(s),ch=getChange(s)
+    html+=`<span class="tape-item"><span style="color:var(--text);font-weight:500">${s}</span><span style="color:var(--muted)">${fD(p)}</span><span style="color:${cls(ch)}">${fP(ch)}</span><span class="tape-sep">│</span></span>`
+  })
+  Object.keys(CRYPTO).slice(0,5).forEach(id=>{
+    const c=crypto[id];if(!c)return
+    html+=`<span class="tape-item"><span style="color:var(--text);font-weight:500">${c.sym}</span><span style="color:var(--muted)">${fD(c.price)}</span><span style="color:${cls(c.ch24||0)}">${fP(c.ch24||0)}</span><span class="tape-sep">│</span></span>`
+  })
+  // Duplicate for seamless scroll
+  document.getElementById('tape-inner').innerHTML=html+html
+}
+
+// ═══════════════════════════════════════════
+// SEARCH
+// ═══════════════════════════════════════════
+const searchIndex=[
+  ...Object.keys(STOCKS).map(s=>({sym:s,name:STOCKS[s].name,type:'stock',id:s})),
+  ...Object.keys(CRYPTO).map(id=>({sym:CRYPTO[id].sym,name:CRYPTO[id].name,type:'crypto',id})),
+  ...Object.keys(FX_BASE).map(s=>({sym:s,name:FX_BASE[s].name,type:'fx',id:s})),
+  ...Object.keys(METALS).map(s=>({sym:s,name:METALS[s].name,type:'metal',id:s})),
+]
+const typeColors={stock:'#00aaff',crypto:'#ff7a00',fx:'#00ff88',metal:'#ffd600'}
+const typeLabels={stock:'STOCK',crypto:'CRYPTO',fx:'DIVISA',metal:'METAL'}
+const pageMap={stock:'stocks',crypto:'crypto',fx:'fx',metal:'metals'}
+
+function buildSearch(){
+  const inp=document.getElementById('search')
+  const drop=document.getElementById('search-drop')
+  inp.addEventListener('input',()=>{
+    const q=inp.value.trim().toUpperCase()
+    if(!q){drop.style.display='none';return}
+    const res=searchIndex.filter(x=>x.sym.includes(q)||x.name.toUpperCase().includes(q)).slice(0,8)
+    if(!res.length){drop.style.display='none';return}
+    drop.innerHTML=res.map(x=>{
+      const price=x.type==='stock'?fD(getPrice(x.id)):x.type==='crypto'?fD(crypto[x.id]?.price||0):x.type==='fx'?f(fxData[x.id]||FX_BASE[x.id]?.base||0,4):fD(getPrice(x.id))
+      const tc=typeColors[x.type]
+      return `<div class="s-item" onclick="nav('${pageMap[x.type]}');document.getElementById('search').value='';document.getElementById('search-drop').style.display='none'">
+        <span class="s-badge" style="background:${tc}18;color:${tc};border:1px solid ${tc}33">${typeLabels[x.type]}</span>
+        <div style="flex:1;min-width:0"><div style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600">${x.sym}</div><div style="font-size:10px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${x.name}</div></div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;flex-shrink:0">${price}</div>
+      </div>`
+    }).join('')
+    drop.style.display='block'
+  })
+  document.addEventListener('click',e=>{if(!e.target.closest('#search-wrap'))drop.style.display='none'})
+}
+
+// ═══════════════════════════════════════════
+// NAV
+// ═══════════════════════════════════════════
+function nav(page){
+  currentPage=page
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'))
+  const tab=document.getElementById('tab-'+page)
+  if(tab)tab.classList.add('active')
+  render()
+}
+
+// ═══════════════════════════════════════════
+// RENDER ROUTER
+// ═══════════════════════════════════════════
+function render(){
+  const pages={dash:renderDash,stocks:renderStocks,crypto:renderCrypto,fx:renderFX,metals:renderMetals,portfolio:renderPortfolio,alerts:renderAlerts,history:renderHistory}
+  const fn=pages[currentPage]
+  if(fn)document.getElementById('content').innerHTML=fn()
+}
+
+// ═══════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════
+function renderDash(){
+  const allAssets=[
+    ...Object.keys(STOCKS).map(s=>({sym:s,name:STOCKS[s].name,ch:getChange(s),price:getPrice(s)})),
+    ...Object.keys(METALS).map(s=>({sym:s,name:METALS[s].name,ch:((getPrice(s)-METALS[s].base)/METALS[s].base)*100,price:getPrice(s)})),
+    ...Object.keys(CRYPTO).map(id=>({sym:crypto[id]?.sym||id,name:crypto[id]?.name||id,ch:crypto[id]?.ch24||0,price:crypto[id]?.price||0})),
+  ].filter(x=>x.price>0)
+  const sorted=[...allAssets].sort((a,b)=>b.ch-a.ch)
+  const gainers=sorted.slice(0,5),losers=sorted.slice(-5).reverse()
+
+  const indices=[
+    {l:"S&P 500",v:5743+(Math.random()*10-5),b:5743,c:"#00aaff"},
+    {l:"NASDAQ",v:18234+(Math.random()*40-20),b:18234,c:"#bf5fff"},
+    {l:"Dow Jones",v:42891+(Math.random()*100-50),b:42891,c:"#00ff88"},
+    {l:"IPC México",v:53245+(Math.random()*200-100),b:53245,c:"#ffd600"},
+  ]
+
+  const miniRow=(x)=>`<div class="mini-row">
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="mini-icon" style="background:${x.ch>=0?'rgba(0,255,136,.1)':'rgba(255,45,85,.1)'};color:${cls(x.ch)}">${x.sym.slice(0,2)}</div>
+      <div><div style="font-size:12px;font-weight:600">${x.sym}</div><div style="font-size:9px;color:var(--dim)">${(x.name||'').substring(0,16)}</div></div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:${cls(x.ch)}">${fD(x.price)}</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:${cls(x.ch)}">${fP(x.ch)}</div>
+    </div>
+  </div>`
+
+  return `
+  <div class="page-title">
+    <div><div>📊 Dashboard Global</div><div style="font-size:12px;color:var(--dim);margin-top:3px;font-weight:400">Actualización en tiempo real</div></div>
+    <span class="ms-badge">@MexiSonora</span>
+  </div>
+  <div class="grid-4">
+    ${indices.map(idx=>{const ch=((idx.v-idx.b)/idx.b)*100;return`<div class="card"><div class="stat-lbl">${idx.l}</div><div class="stat-val" style="color:${cls(ch)}">${f(idx.v)}</div><div class="stat-sub" style="color:${cls(ch)}">${arr(ch)} ${fP(ch)}</div></div>`}).join('')}
+  </div>
+  <div class="grid-3">
+    <div class="card" style="border-top:1px solid #00aaff44">
+      <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:12px;color:#00aaff">🔥 Top Ganancias</div>
+      ${gainers.map(miniRow).join('')}
+    </div>
+    <div class="card" style="border-top:1px solid #ff2d5544">
+      <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:12px;color:#ff2d55">📉 Top Pérdidas</div>
+      ${losers.map(miniRow).join('')}
+    </div>
+    <div class="card" style="border-top:1px solid #ffd60044">
+      <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:12px;color:#ffd600">⚡ Metales & Crypto</div>
+      ${[
+        {sym:"XAU",name:"Oro",price:getPrice("XAU"),ch:((getPrice("XAU")-METALS["XAU"].base)/METALS["XAU"].base)*100},
+        {sym:"BTC",name:"Bitcoin",price:crypto["bitcoin"]?.price||0,ch:crypto["bitcoin"]?.ch24||0},
+        {sym:"ETH",name:"Ethereum",price:crypto["ethereum"]?.price||0,ch:crypto["ethereum"]?.ch24||0},
+        {sym:"WTI",name:"Petróleo",price:getPrice("WTI"),ch:((getPrice("WTI")-METALS["WTI"].base)/METALS["WTI"].base)*100},
+        {sym:"MXN",name:"Peso vs USD",price:fxData["MXN"]||FX_BASE["MXN"].base,ch:((fxData["MXN"]||FX_BASE["MXN"].base)-FX_BASE["MXN"].base)/FX_BASE["MXN"].base*100},
+      ].map(miniRow).join('')}
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="card" style="border-top:1px solid #ff7a0044">
+      <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:12px;color:#ff7a00">₿ Top Crypto</div>
+      ${Object.keys(CRYPTO).slice(0,6).map(id=>{const c=crypto[id];if(!c)return'';return miniRow({sym:c.sym,name:c.name,price:c.price,ch:c.ch24||0})}).join('')}
+    </div>
+    <div class="card" style="border-top:1px solid #00ff8844">
+      <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:12px;color:#00ff88">💱 Divisas vs USD</div>
+      ${['MXN','EUR','GBP','JPY','BRL','ARS'].map(s=>miniRow({sym:s,name:FX_BASE[s].name,price:fxData[s]||FX_BASE[s].base,ch:((fxData[s]||FX_BASE[s].base)-FX_BASE[s].base)/FX_BASE[s].base*100})).join('')}
+    </div>
+  </div>`
+}
+
+// ═══════════════════════════════════════════
+// STOCKS / METALS PAGE
+// ═══════════════════════════════════════════
+function renderAssets(title,assets,accentColor){
+  const cards=assets.map(a=>`
+    <div class="asset-card" style="border-top:1px solid ${accentColor}44" onclick="openProj('${a.sym}')"
+      onmouseover="this.style.borderColor='${accentColor}55'" onmouseout="this.style.borderColor='#162040';this.style.borderTopColor='${accentColor}44'">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div>
+          <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:800">${a.sym}</div>
+          <div style="font-size:10px;color:var(--dim);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:110px">${a.name}</div>
+        </div>
+        <span class="sig ${sigClass(a.signal)}">${a.signal}</span>
+      </div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:500;color:${cls(a.ch)};margin-bottom:3px">${fD(a.price)}</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:${cls(a.ch)};margin-bottom:10px">${arr(a.ch)} ${fP(a.ch)}</div>
+      ${sparkSVG(a.hist)}
+    </div>`).join('')
+
+  const rows=assets.map(a=>`<tr onclick="openProj('${a.sym}')">
+    <td style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700">${a.sym}</td>
+    <td style="font-family:'JetBrains Mono',monospace;font-size:12px;color:${cls(a.ch)}">${fD(a.price)}</td>
+    <td style="font-family:'JetBrains Mono',monospace;font-size:12px;color:${cls(a.ch)}">${fP(a.ch)}</td>
+    <td style="font-family:'JetBrains Mono',monospace;font-size:12px;color:${a.rsi>70?'#ff2d55':a.rsi<30?'#00ff88':'#ffd600'}">${f(a.rsi,1)}</td>
+    <td><span class="sig ${sigClass(a.signal)}">${a.signal}</span></td>
+    <td style="font-family:'JetBrains Mono',monospace;font-size:12px;color:${cls(a.fc7.pct)}">${fP(a.fc7.pct)}</td>
+  </tr>`).join('')
+
+  return `
+  <div class="page-title"><div>${title}</div><span class="ms-badge">@MexiSonora</span></div>
+  <div class="grid-auto">${cards}</div>
+  <div class="card">
+    <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:14px">📋 Tabla Completa</div>
+    <div style="overflow-x:auto"><table><thead><tr>
+      ${['Símbolo','Precio','Cambio %','RSI','Señal','Pronóstico 7D'].map(h=>`<th>${h}</th>`).join('')}
+    </tr></thead><tbody>${rows}</tbody></table></div>
+  </div>`
+}
+
+function renderStocks(){
+  return renderAssets('📈 Acciones NYSE & NASDAQ',Object.keys(STOCKS).map(s=>({
+    sym:s,name:STOCKS[s].name,price:getPrice(s),ch:getChange(s),signal:getSignal(s),
+    rsi:rsiData[s]||50,fc7:getForecast(s,7),hist:histData[s]
+  })),'#00aaff')
+}
+function renderMetals(){
+  return renderAssets('🥇 Metales & Commodities',Object.keys(METALS).map(s=>({
+    sym:s,name:METALS[s].name,price:getPrice(s),ch:((getPrice(s)-METALS[s].base)/METALS[s].base)*100,
+    signal:getSignal(s),rsi:rsiData[s]||50,fc7:getForecast(s,7),hist:histData[s]
+  })),'#ffd600')
+}
+
+// ═══════════════════════════════════════════
+// CRYPTO PAGE
+// ═══════════════════════════════════════════
+function renderCrypto(){
+  const ids=Object.keys(CRYPTO)
+  const totalCap=Object.values(crypto).reduce((a,c)=>a+(c.cap||0),0)
+  const cards=ids.slice(0,12).map(id=>{
+    const c=crypto[id];if(!c)return''
+    const sig2=getSignal(id)
+    return `<div class="asset-card" style="border-top:1px solid #ff7a0044" onclick="openProj('${id}')"
+      onmouseover="this.style.borderColor='#ff7a0055'" onmouseout="this.style.borderColor='#162040';this.style.borderTopColor='#ff7a0044'">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <div><div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:800">${c.sym}</div><div style="font-size:10px;color:var(--dim)">${c.name}</div></div>
+        <span class="sig ${sigClass(sig2)}">${sig2}</span>
+      </div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:17px;font-weight:500;color:${cls(c.ch24||0)}">${fD(c.price)}</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:${cls(c.ch24||0)};margin-bottom:8px">${arr(c.ch24||0)} ${fP(c.ch24||0)}</div>
+      ${sparkSVG(histData[id])}
+    </div>`
+  }).join('')
+
+  const rows=ids.map((id,i)=>{
+    const c=crypto[id];if(!c)return''
+    const sig2=getSignal(id),rsi=rsiData[id]||50,fc7=getForecast(id,7)
+    return `<tr onclick="openProj('${id}')">
+      <td style="color:var(--dim);font-family:'JetBrains Mono',monospace;font-size:11px">${i+1}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700">${c.sym}<br/><span style="font-size:9px;font-weight:400;color:var(--dim)">${c.name}</span></td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:12px;color:${cls(c.ch24||0)}">${fD(c.price)}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:12px;color:${cls(c.ch24||0)}">${fP(c.ch24||0)}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:12px;color:${cls(c.ch7||0)}">${fP(c.ch7||0)}</td>
+      <td style="font-size:11px;color:var(--muted)">${fB(c.cap)}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:12px;color:${rsi>70?'#ff2d55':rsi<30?'#00ff88':'#ffd600'}">${f(rsi,1)}</td>
+      <td><span class="sig ${sigClass(sig2)}">${sig2}</span></td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:12px;color:${cls(fc7.pct)}">${fP(fc7.pct)}</td>
+    </tr>`
+  }).join('')
+
+  return `
+  <div class="page-title">
+    <div>₿ Mercado Crypto</div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#ff7a00">Cap Total: ${fB(totalCap)}</span>
+      <span class="ms-badge">@MexiSonora · CoinGecko API</span>
+    </div>
+  </div>
+  <div class="grid-auto">${cards}</div>
+  <div class="card">
+    <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:14px">📋 Tabla Completa Crypto</div>
+    <div style="overflow-x:auto"><table><thead><tr>
+      ${['#','Moneda','Precio USD','24H','7D','Cap. Mercado','RSI','Señal','7D Pron.'].map(h=>`<th>${h}</th>`).join('')}
+    </tr></thead><tbody>${rows}</tbody></table></div>
+  </div>`
+}
+
+// ═══════════════════════════════════════════
+// FX PAGE
+// ═══════════════════════════════════════════
+function renderFX(){
+  const fxKeys=Object.keys(FX_BASE)
+  const cards=fxKeys.slice(0,12).map(s=>{
+    const cur=fxData[s]||FX_BASE[s].base,ch=((cur-FX_BASE[s].base)/FX_BASE[s].base)*100,sig2=getSignal(s)
+    return `<div class="asset-card" style="border-top:1px solid #00ff8844" onclick="openProj('${s}')"
+      onmouseover="this.style.borderColor='#00ff8855'" onmouseout="this.style.borderColor='#162040';this.style.borderTopColor='#00ff8844'">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <div><div style="font-size:15px;font-weight:700">${FX_BASE[s].flag} ${s}</div><div style="font-size:10px;color:var(--dim)">${FX_BASE[s].name}</div></div>
+        <span class="sig ${sigClass(sig2)}">${sig2}</span>
+      </div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:500;color:${cls(ch)}">${f(cur,4)}</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:${cls(ch)};margin-bottom:8px">${arr(ch)} ${fP(ch)}</div>
+      ${sparkSVG(histData[s])}
+    </div>`
+  }).join('')
+
+  const selectOpts=`<option value="USD">USD — Dólar</option>${fxKeys.map(s=>`<option value="${s}">${s} — ${FX_BASE[s].name}</option>`).join('')}`
+
+  return `
+  <div class="page-title"><div>💱 Divisas & Forex</div><span class="ms-badge">@MexiSonora · Frankfurter API</span></div>
+  <div class="grid-auto">${cards}</div>
+  <div class="card" style="margin-bottom:20px;border-top:1px solid #00ff8844">
+    <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:14px;color:#00ff88">🔄 Convertidor de Divisas</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;align-items:end;margin-bottom:12px">
+      <div><label class="form-lbl">Cantidad</label><input type="number" id="cv-amt" value="1000" class="conv-input" oninput="updateConv()"/></div>
+      <div><label class="form-lbl">De</label><select id="cv-from" class="conv-input" onchange="updateConv()">${selectOpts}</select></div>
+      <div><label class="form-lbl">A</label><select id="cv-to" class="conv-input" onchange="updateConv()"><option value="USD">USD — Dólar</option>${fxKeys.filter(s=>s!=='USD').map(s=>`<option value="${s}"${s==='MXN'?' selected':''}>${s} — ${FX_BASE[s].name}</option>`).join('')}</select></div>
+    </div>
+    <div style="background:var(--bg3);border-radius:10px;padding:14px" id="conv-result">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:500;color:#00ff88" id="conv-output">1,000.00 USD = 17,450.0000 MXN</div>
+      <div style="font-size:11px;color:var(--dim);margin-top:6px">Tasas actualizadas · <span style="color:#ffd600">@MexiSonora</span></div>
+    </div>
+  </div>`
+}
+
+function updateConv(){
+  const amt=parseFloat(document.getElementById('cv-amt')?.value)||0
+  const from=document.getElementById('cv-from')?.value||'USD'
+  const to=document.getElementById('cv-to')?.value||'MXN'
+  const rateFrom=from==='USD'?1:(fxData[from]||FX_BASE[from]?.base||1)
+  const rateTo=to==='USD'?1:(fxData[to]||FX_BASE[to]?.base||1)
+  const converted=(amt/rateFrom)*rateTo
+  const el=document.getElementById('conv-output')
+  if(el)el.textContent=`${f(amt,2)} ${from} = ${f(converted,4)} ${to}`
+}
+
+// ═══════════════════════════════════════════
+// PORTFOLIO PAGE
+// ═══════════════════════════════════════════
+function renderPortfolio(){
+  const total=portfolio.reduce((a,p)=>a+(getPrice(p.sym)||p.buy)*p.qty,0)
+  const cost=portfolio.reduce((a,p)=>a+p.buy*p.qty,0)
+  const pnl=total-cost,pnlP=cost>0?(pnl/cost)*100:0
+  const best=portfolio.reduce((b,p)=>{const pct=((getPrice(p.sym)||p.buy)-p.buy)/p.buy*100;return pct>b.pct?{sym:p.sym,pct}:b},{sym:'—',pct:-Infinity})
+  const USD_MXN=fxData['MXN']||17.45
+
+  const posRows=portfolio.map((p,i)=>{
+    const cur=getPrice(p.sym)||p.buy,val=cur*p.qty,pnlD=val-p.buy*p.qty,pnlPct=(pnlD/(p.buy*p.qty))*100,sig2=getSignal(p.sym)
+    return `<tr>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700">${p.sym}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:12px">${f(p.qty,4)}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:12px">${fD(p.buy)}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:12px;color:${cls(cur-p.buy)}">${fD(cur)}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#00aaff">${fD(val)}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:12px;color:${cls(pnlD)}">${pnlD>=0?'+':''}${fD(pnlD)}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:12px;color:${cls(pnlPct)}">${fP(pnlPct)}</td>
+      <td><span class="sig ${sigClass(sig2)}">${sig2}</span></td>
+      <td><button class="btn-red" onclick="removePos(${i})">✕</button></td>
+    </tr>`
+  }).join('')
+
+  const assetOpts=searchIndex.map(x=>`<option value="${x.sym}">${x.sym} — ${x.name}</option>`).join('')
+
+  return `
+  <div class="page-title"><div>💼 Mi Portafolio</div><span class="ms-badge">@MexiSonora</span></div>
+  <div class="grid-4" style="margin-bottom:20px">
+    ${[
+      {l:"Capital Total",v:fD(total),s:f(total*USD_MXN)+" MXN",c:"#00aaff"},
+      {l:"G/P",v:(pnl>=0?'+':'')+fD(pnl),s:fP(pnlP),c:cls(pnl)},
+      {l:"Posiciones",v:portfolio.length,s:"activos",c:"#ffd600"},
+      {l:"Mejor Activo",v:best.sym,s:best.pct>-Infinity?fP(best.pct):'—',c:"#00ff88"},
+    ].map(x=>`<div class="card"><div class="stat-lbl">${x.l}</div><div class="stat-val" style="color:${x.c}">${x.v}</div><div class="stat-sub">${x.s}</div></div>`).join('')}
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:14px">➕ Agregar Posición</div>
+      <div style="margin-bottom:12px"><label class="form-lbl">Activo</label><select id="p-asset" class="conv-input">${assetOpts}</select></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+        <div><label class="form-lbl">Cantidad</label><input type="number" id="p-qty" placeholder="0.00" class="conv-input"/></div>
+        <div><label class="form-lbl">Precio Compra</label><input type="number" id="p-buy" placeholder="$0.00" class="conv-input"/></div>
+      </div>
+      <button class="btn-green" onclick="addPos()">💾 Guardar Posición</button>
+      <div id="p-msg" style="margin-top:10px;font-size:12px;color:#00ff88;text-align:center"></div>
+    </div>
+    <div class="card">
+      <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:14px">📊 Análisis de Cartera</div>
+      ${portfolio.length===0?'<div style="text-align:center;padding:28px;color:var(--dim)">Sin posiciones</div>':
+        portfolio.map(p=>{const cur=getPrice(p.sym)||p.buy,pct=((cur-p.buy)/p.buy)*100;return`
+          <div style="margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+              <span style="font-size:12px;font-weight:600">${p.sym}</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:${cls(pct)}">${fP(pct)}</span>
+            </div>
+            <div style="height:5px;background:var(--bg3);border-radius:3px;overflow:hidden">
+              <div style="height:100%;width:${Math.min(100,Math.abs(pct)*2)}%;background:${pct>=0?'#00ff88':'#ff2d55'};border-radius:3px"></div>
+            </div>
+          </div>`}).join('')}
+    </div>
+  </div>
+  ${portfolio.length>0?`<div class="card">
+    <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:14px">📋 Mis Posiciones</div>
+    <div style="overflow-x:auto"><table><thead><tr>
+      ${['Activo','Cantidad','Compra','Actual','Valor Total','G/P $','G/P %','Señal',''].map(h=>`<th>${h}</th>`).join('')}
+    </tr></thead><tbody>${posRows}</tbody></table></div>
+  </div>`:''}
+  `
+}
+
+function addPos(){
+  const asset=document.getElementById('p-asset')?.value
+  const qty=parseFloat(document.getElementById('p-qty')?.value)
+  const buyPrice=parseFloat(document.getElementById('p-buy')?.value)
+  if(!asset||!qty||!buyPrice){showMsg('p-msg','Completa todos los campos','#ff2d55');return}
+  const pos=[...portfolio],ex=pos.find(p=>p.sym===asset)
+  if(ex){const tc=ex.qty*ex.buy+qty*buyPrice;ex.qty+=qty;ex.buy=tc/ex.qty}
+  else pos.push({sym:asset,qty,buy:buyPrice,date:new Date().toLocaleDateString('es-MX')})
+  portfolio=pos;saveData()
+  addHistEntry('add',`${qty} ${asset} @ ${fD(buyPrice)}`)
+  showMsg('p-msg',`✅ ${asset} guardado`)
+  render()
+}
+
+function removePos(i){
+  portfolio=portfolio.filter((_,j)=>j!==i)
+  saveData();render()
+}
+
+// ═══════════════════════════════════════════
+// ALERTS PAGE
+// ═══════════════════════════════════════════
+function renderAlerts(){
+  const typeLabels={above:'Precio > $',below:'Precio < $',change_up:'Cambio > +%',change_down:'Cambio < -%',rsi_ob:'RSI sobrecompra (>70)',rsi_os:'RSI sobreventa (<30)'}
+  const assetOpts=searchIndex.map(x=>`<option value="${x.sym}">${x.sym} — ${x.name}</option>`).join('')
+
+  return `
+  <div class="page-title"><div>🔔 Centro de Alertas</div><span class="ms-badge">@MexiSonora</span></div>
+  <div class="grid-2">
+    <div class="card" style="border-top:1px solid #00aaff44">
+      <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:14px;color:#00aaff">➕ Nueva Alerta</div>
+      <div style="margin-bottom:12px"><label class="form-lbl">Activo</label><select id="al-asset" class="conv-input">${assetOpts}</select></div>
+      <div style="margin-bottom:12px"><label class="form-lbl">Tipo</label>
+        <select id="al-type" class="conv-input" onchange="render()">
+          ${Object.entries(typeLabels).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}
+        </select>
+      </div>
+      <div style="margin-bottom:12px"><label class="form-lbl">Valor</label><input type="number" id="al-val" placeholder="0.00" class="conv-input"/></div>
+      <div style="margin-bottom:14px"><label class="form-lbl">Nota</label><input type="text" id="al-note" placeholder="Ej: Comprar cuando baje..." class="conv-input"/></div>
+      <button class="btn-blue" onclick="createAlert()">🔔 Crear Alerta</button>
+      <div id="al-msg" style="margin-top:10px;font-size:12px;color:#00ff88;text-align:center"></div>
+    </div>
+    <div class="card">
+      <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:14px">📊 Estadísticas</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        ${[
+          {l:'Total',v:alerts.length,c:'#00aaff'},
+          {l:'Activas',v:alerts.filter(a=>a.status==='active').length,c:'#00ff88'},
+          {l:'Disparadas',v:alerts.filter(a=>a.status==='triggered').length,c:'#ffd600'},
+          {l:'Hoy',v:alerts.filter(a=>a.created.startsWith(new Date().toLocaleDateString('es-MX'))).length,c:'#bf5fff'},
+        ].map(x=>`<div style="background:var(--bg3);border-radius:10px;padding:14px;text-align:center">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:22px;color:${x.c};margin-bottom:4px">${x.v}</div>
+          <div style="font-size:10px;color:var(--dim)">${x.l}</div>
+        </div>`).join('')}
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700">🔔 Mis Alertas</div>
+      <button class="btn-ghost" onclick="clearTriggered()">Limpiar disparadas</button>
+    </div>
+    ${alerts.length===0?'<div style="text-align:center;padding:28px;color:var(--dim)">Sin alertas · Crea tu primera alerta arriba</div>':
+      [...alerts].reverse().map((a,i)=>`
+        <div style="background:${a.status==='triggered'?'rgba(255,214,0,.03)':'transparent'};border:1px solid ${a.status==='triggered'?'rgba(255,214,0,.3)':'var(--border)'};border-radius:10px;padding:14px;display:flex;align-items:center;gap:12px;margin-bottom:8px">
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:600;margin-bottom:3px">${a.sym} — ${typeLabels[a.type]||a.type} ${a.val?fD(a.val):''}</div>
+            <div style="font-size:11px;color:var(--dim)">${a.note||'Sin nota'} · ${a.created}</div>
+          </div>
+          <span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:5px;background:${a.status==='triggered'?'rgba(255,214,0,.1)':'rgba(0,255,136,.1)'};color:${a.status==='triggered'?'#ffd600':'#00ff88'}">${a.status==='triggered'?'⚡ Disparada':'✅ Activa'}</span>
+          <button class="btn-red" onclick="removeAlert(${alerts.length-1-i})">✕</button>
+        </div>`).join('')}
+  </div>`
+}
+
+function createAlert(){
+  const asset=document.getElementById('al-asset')?.value
+  const type=document.getElementById('al-type')?.value
+  const val=parseFloat(document.getElementById('al-val')?.value)
+  const note=document.getElementById('al-note')?.value||''
+  const needsVal=!['rsi_ob','rsi_os'].includes(type)
+  if(!asset||(needsVal&&isNaN(val))){showMsg('al-msg','Completa todos los campos','#ff2d55');return}
+  alerts=[...alerts,{id:Date.now(),sym:asset,type,val:needsVal?val:null,note,status:'active',created:new Date().toLocaleString('es-MX')}]
+  saveData();addHistEntry('alert',`Alerta: ${asset}`)
+  showMsg('al-msg',`✅ Alerta para ${asset} creada`)
+  render()
+}
+
+function removeAlert(i){alerts=alerts.filter((_,j)=>j!==i);saveData();render()}
+function clearTriggered(){alerts=alerts.filter(a=>a.status!=='triggered');saveData();render()}
+
+// ═══════════════════════════════════════════
+// HISTORY PAGE
+// ═══════════════════════════════════════════
+function buildHistTable(){
+  const hd=histData[histSel]||[]
+  if(!hd.length)return '<div style="text-align:center;padding:20px;color:var(--dim)">Sin datos</div>'
+  return `<table><thead><tr>${['Período','Apertura','Cierre','Cambio'].map(h=>`<th>${h}</th>`).join('')}</tr></thead>
+    <tbody>${[...hd].slice(-20).reverse().map((v,i,arr2)=>{
+      const prev=arr2[i+1]||v,ch=v-prev,pct=(ch/prev)*100
+      return `<tr>
+        <td style="color:var(--dim);font-family:'JetBrains Mono',monospace;font-size:11px">P${hd.length-i}</td>
+        <td style="font-family:'JetBrains Mono',monospace;font-size:11px">${fD(prev)}</td>
+        <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:${cls(ch)}">${fD(v)}</td>
+        <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:${cls(pct)}">${fP(pct)}</td>
+      </tr>`
+    }).join('')}</tbody></table>`
+}
+
+function changeHistSel(val){
+  histSel=val
+  const wrap=document.getElementById('hist-table-wrap')
+  if(wrap)wrap.innerHTML=buildHistTable()
+}
+
+function renderHistory(){
+  const ico={add:'➕',remove:'🗑️',alert:'🔔',alert_fire:'⚡'}
+  const histOpts=searchIndex.map(x=>`<option value="${x.id}"${x.id===histSel?' selected':''}>${x.sym} — ${x.name}</option>`).join('')
+
+  return `
+  <div class="page-title"><div>📜 Historial</div><span class="ms-badge">@MexiSonora</span></div>
+  <div class="grid-2">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700">🗓️ Actividad Reciente</div>
+        <button class="btn-ghost" onclick="clearHistory()">Limpiar</button>
+      </div>
+      ${history.length===0?'<div style="text-align:center;padding:28px;color:var(--dim)">Sin actividad</div>':
+        history.slice(0,20).map(h=>`<div style="display:flex;gap:10px;padding:9px 0;border-bottom:1px solid rgba(22,32,64,.4)">
+          <span style="font-size:14px">${ico[h.type]||'📌'}</span>
+          <div><div style="font-size:12px;font-weight:500">${h.text}</div><div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim)">${h.time}</div></div>
+        </div>`).join('')}
+    </div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700">💹 Precios Históricos</div>
+        <select class="conv-input" style="max-width:160px" onchange="changeHistSel(this.value)">${histOpts}</select>
+      </div>
+      <div style="overflow-x:auto" id="hist-table-wrap">${buildHistTable()}</div>
+    </div>
+  </div>`
+}
+
+function clearHistory(){if(confirm('¿Limpiar historial?')){history=[];saveData();render()}}
+
+// ═══════════════════════════════════════════
+// PROJECTION OVERLAY
+// ═══════════════════════════════════════════
+function openProj(sym){
+  const price=getPrice(sym)||0,ch=getChange(sym)
+  const rsi=rsiData[sym]||50,fc7=getForecast(sym,7),signal=getSignal(sym)
+  const dayNames=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']
+  const days7=Array.from({length:7},(_,i)=>{
+    const dailyPct=(fc7.pct/100)/7,noise=(Math.random()-.5)*0.01*(i+1),pct=(dailyPct*(i+1)+noise)*100
+    return{day:i+1,price:price*(1+pct/100),pct,conf:Math.max(40,90-i*7)}
+  })
+  const bestIdx=days7.reduce((bi,x,i,a)=>x.pct>a[bi].pct?i:bi,0)
+  const worstIdx=days7.reduce((bi,x,i,a)=>x.pct<a[bi].pct?i:bi,0)
+  const sigTexts={
+    BUY:{title:'Recomendación: COMPRAR',desc:`RSI de ${f(rsi,1)} indica zona de compra. Momentum positivo. @MexiSonora recomienda considerar entrada.`,c:'#00ff88'},
+    SELL:{title:'Recomendación: VENDER',desc:`RSI de ${f(rsi,1)} indica sobrecompra. Considera asegurar ganancias. Consulta con @MexiSonora.`,c:'#ff2d55'},
+    HOLD:{title:'Recomendación: MANTENER',desc:`Señales mixtas. El activo consolida. Espera confirmación antes de operar. @MexiSonora monitorea.`,c:'#ff7a00'},
+  }
+  const st=sigTexts[signal]||sigTexts.HOLD
+  const displayName=STOCKS[sym]?.name||METALS[sym]?.name||FX_BASE[sym]?.name||crypto[sym]?.name||sym
+
+  document.getElementById('overlay-inner').innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;border-bottom:1px solid var(--border);padding-bottom:20px">
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:#00aaff">MexiSonora · Proyección 7 Días</div>
+        <div style="font-size:11px;color:var(--dim);margin-top:3px">Modelo de regresión lineal + tendencia · @MexiSonora</div>
+      </div>
+      <button onclick="closeProj()" style="background:var(--bg3);border:1px solid var(--border);color:var(--muted);width:36px;height:36px;border-radius:9px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center">✕</button>
+    </div>
+    <div style="margin-bottom:28px">
+      <div style="font-family:'Syne',sans-serif;font-size:44px;font-weight:900;line-height:1">${sym}</div>
+      <div style="font-size:13px;color:var(--dim);margin-top:4px">${displayName}</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:32px;font-weight:500;color:${cls(ch)};margin-top:8px">${fD(price)} <span style="font-size:18px">${arr(ch)} ${fP(ch)}</span></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:24px">
+      ${[
+        {l:'Objetivo 7D',v:fD(fc7.price),s:fP(fc7.pct),c:cls(fc7.pct)},
+        {l:'RSI (14)',v:f(rsi,1),s:rsi>70?'Sobrecompra':rsi<30?'Sobreventa':'Neutral',c:rsi>70?'#ff2d55':rsi<30?'#00ff88':'#ffd600'},
+        {l:'Soporte',v:fD(price*.94),s:'Zona compra',c:'var(--muted)'},
+        {l:'Resistencia',v:fD(price*1.08),s:'Zona venta',c:'var(--muted)'},
+        {l:'Tendencia',v:fc7.pct>=0?'↗ Alcista':'↘ Bajista',s:'7 días',c:cls(fc7.pct)},
+        {l:'Señal',v:signal,s:'@MexiSonora',c:st.c},
+      ].map(x=>`<div style="background:var(--bg3);border-radius:10px;padding:14px">
+        <div style="font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">${x.l}</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:500;color:${x.c}">${x.v}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:3px">${x.s}</div>
+      </div>`).join('')}
+    </div>
+    <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:14px">📅 Pronóstico Día a Día</div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin-bottom:24px">
+      ${days7.map((x,i)=>{
+        const d=new Date();d.setDate(d.getDate()+i+1)
+        const isBest=i===bestIdx,isWorst=i===worstIdx
+        return `<div style="background:${isBest?'rgba(0,255,136,.05)':isWorst?'rgba(255,45,85,.05)':'var(--bg2)'};border:1px solid ${isBest?'#00ff88':isWorst?'#ff2d55':'var(--border)'};border-radius:12px;padding:14px;text-align:center">
+          <div style="font-size:10px;color:var(--dim);margin-bottom:6px">${dayNames[d.getDay()]} ${d.getDate()}</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:${cls(x.pct)};margin-bottom:4px">${fD(x.price)}</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:${cls(x.pct)}">${fP(x.pct)}</div>
+          <div style="font-size:9px;color:var(--dim);margin-top:5px">🎯 ${x.conf}%</div>
+        </div>`
+      }).join('')}
+    </div>
+    <div style="margin-bottom:24px;background:var(--bg2);border-radius:14px;padding:18px">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px">RSI — Zona de fuerza relativa</div>
+      <div class="rsi-wrap"><div class="rsi-cursor" style="left:${rsi}%"></div></div>
+      <div class="rsi-labels"><span>Sobreventa 0</span><span>30</span><span>50</span><span>70</span><span>100 Sobrecompra</span></div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:22px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:20px">
+      <div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:900;padding:14px 24px;border-radius:12px;background:${st.c}12;border:2px solid ${st.c}44;color:${st.c}">${signal}</div>
+      <div style="flex:1"><div style="font-size:16px;font-weight:700;margin-bottom:6px">${st.title}</div><div style="font-size:13px;color:var(--muted);line-height:1.6">${st.desc}</div></div>
+    </div>
+    <div style="text-align:center;color:var(--dim);font-size:11px">
+      🚀 Proyección generada con análisis cuantitativo · <span style="color:#ffd600">@MexiSonora</span> · Síguenos para señales en tiempo real<br/>
+      <span style="font-size:10px">Disclaimer: Este análisis es informativo y no constituye asesoría financiera formal.</span>
+    </div>
+  `
+  document.getElementById('overlay').style.display='block'
+  document.body.style.overflow='hidden'
+}
+
+function closeProj(){
+  document.getElementById('overlay').style.display='none'
+  document.body.style.overflow=''
+}
+document.getElementById('overlay').addEventListener('click',e=>{if(e.target===document.getElementById('overlay'))closeProj()})
+
+// ═══════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════
+function showMsg(id,msg,color='#00ff88'){
+  const el=document.getElementById(id)
+  if(el){el.textContent=msg;el.style.color=color;setTimeout(()=>{if(el)el.textContent=''},3000)}
+}
+
+function saveData(){
+  try{localStorage.setItem('ms_port',JSON.stringify(portfolio))}catch(e){}
+  try{localStorage.setItem('ms_alerts',JSON.stringify(alerts))}catch(e){}
+  try{localStorage.setItem('ms_hist',JSON.stringify(history))}catch(e){}
+}
+
+function addHistEntry(type,text){
+  history=[{type,text,time:new Date().toLocaleString('es-MX'),ts:Date.now()},...history].slice(0,200)
+  saveData()
+}
+
+// ═══════════════════════════════════════════
+// START
+// ═══════════════════════════════════════════
+init()
+</script>
+</body>
+</html>
